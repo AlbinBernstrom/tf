@@ -1,0 +1,15 @@
+h1 This is the Character manager :D
+
+a href="/characters/new" Character creator 
+
+ol
+  - characters.each do |character|
+    li 
+      a href="characters/#{character['id']}" #{character["name"]}
+      h2 
+      a href="characters/#{character['id']}/edit" edit Character 
+      form method="POST" action="characters/#{character['id']}/delete"
+        input type="submit" value="Delete"
+      h2 ______
+
+      
