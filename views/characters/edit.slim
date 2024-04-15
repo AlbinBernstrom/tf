@@ -1,4 +1,7 @@
 form action='/characters/#{result['id']}/update' method="POST"
-    input type="text" name="name" value="#{result['name']}"
+    input type="text" name="name" value="#{result['name']}" placeholder="Character Name"
+    input type="text" name="character_class" value="#{result['class']}" placeholder="Class Name"
+    input type="text" name="race" value="#{result['race']}" placeholder="Race"
     input type="hidden" name="user_id" value="#{result['user_id']}"
     input type="submit" value="Done"
+

@@ -34,9 +34,11 @@ end
 post('/characters/new') do 
     name = params[:name]
     user_id = params[:user_id].to_i
+    character_class = params[:character_class]
+    race = params[:race]
     p "Vi fick in datan #{name} #{user_id}"
     db = SQLite3::Database.new("db/dungeans_database.db")
-    db.execute("INSERT INTO characters (name, user_id) VALUES (?,?)", name, user_id)
+    db.execute("INSERT INTO characters (name, user_id, class, race) VALUES (?,?,?,?)", name, user_id, character_class, race)
     redirect('/characters')
 end
 
@@ -60,8 +62,17 @@ post('/characters/:id/update') do
     id = params[:id].to_i
     name = params[:name]
     user_id = params[:user_id].to_i
+    character_class = params[:character_class]
+    race = params[:race]
     db = SQLite3::Database.new("db/dungeans_database.db")
-    db.execute("UPDATE characters SET name=?,user_id=? WHERE id = ?", name,user_id,id) 
+    db.execute("UPDATE characters SET name=?,user_id=?,class=?,race=? WHERE id = ?", name,user_id,id,character_class,race) 
     redirect('/characters')
 end
 
+get('/characters/:id') do
+    id = params[:id].to_i
+    db = SQLite3::Database.new("db/dungeans_database.db")
+    db.results_as_hash = true
+    info = db.execute("SELECT * FROM characters WHERE id = ?",id).first
+    slim(:"characters/show",locals:{info:info})
+end
