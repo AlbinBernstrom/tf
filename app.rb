@@ -7,15 +7,58 @@ require 'bcrypt'
 enable :sessions
 
 get('/') do 
+    if session[:username] != nil
+        @username = session[:username]
+    end
     slim(:home)
 end
 
 get('/register') do
+    # se till att man inte kan ha samma användar namn som någon annan
     slim(:register)
 end
 
-get('/login') do
+get('/showlogin') do
     slim(:login)
+end
+
+post('/login') do
+    username = params[:username]
+    password = params[:password].to_s
+    db = SQLite3::Database.new("db/dungeans_database.db")
+    db.results_as_hash = true
+    result = db.execute("SELECT * FROM users WHERE username = ?", username).first
+    p result
+    digest_password = result["password"]
+    p digest_password
+    id = result["id"]
+
+    if BCrypt::Password.new(digest_password) == password 
+        session[:id] = id
+        session[:username] = username
+    
+        redirect('/')
+    else
+        # tror jag borde göra detta anourlunda
+        "Incorrect password"
+    end
+end
+
+post('/users/new') do
+    username = params[:username].to_s
+    password = params[:password].to_s
+    password_confirm = params[:password_confirm].to_s
+
+    if password == password_confirm
+        password_digest = BCrypt::Password.create(password) 
+        db = SQLite3::Database.new("db/dungeans_database.db")
+        db.execute("INSERT INTO users (username, password, admin) VALUES (?,?,?)", username, password_digest, 0)
+
+        redirect('/showlogin')
+    else
+        "Confirmed password didn't match try again"
+    end
+
 end
 
 get('/characters') do 
@@ -31,12 +74,11 @@ get('/characters/new') do
   slim(:"characters/new")
 end
 
-post('/characters/new') do 
+post('/characters') do 
     name = params[:name]
     user_id = params[:user_id].to_i
     character_class = params[:character_class]
     race = params[:race]
-    p "Vi fick in datan #{name} #{user_id}"
     db = SQLite3::Database.new("db/dungeans_database.db")
     db.execute("INSERT INTO characters (name, user_id, class, race) VALUES (?,?,?,?)", name, user_id, character_class, race)
     redirect('/characters')
@@ -54,7 +96,6 @@ get('/characters/:id/edit') do
     db = SQLite3::Database.new("db/dungeans_database.db")
     db.results_as_hash = true
     result = db.execute("SELECT * FROM characters WHERE id = ?",id).first
-    p "hej"
     slim(:'/characters/edit', locals:{result:result})
 end
 
@@ -76,3 +117,4 @@ get('/characters/:id') do
     info = db.execute("SELECT * FROM characters WHERE id = ?",id).first
     slim(:"characters/show",locals:{info:info})
 end
+
