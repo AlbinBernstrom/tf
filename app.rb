@@ -7,14 +7,11 @@ require 'bcrypt'
 enable :sessions
 
 get('/') do 
-    if session[:username] != nil
-        @username = session[:username]
-    end
+    @username = session[:username]
     slim(:home)
 end
 
 get('/register') do
-    # se till att man inte kan ha samma användar namn som någon annan
     slim(:register)
 end
 
@@ -28,19 +25,21 @@ post('/login') do
     db = SQLite3::Database.new("db/dungeans_database.db")
     db.results_as_hash = true
     result = db.execute("SELECT * FROM users WHERE username = ?", username).first
-    p result
-    digest_password = result["password"]
-    p digest_password
-    id = result["id"]
+    if result != nil
+        digest_password = result["password"]
+        id = result["id"]
 
-    if BCrypt::Password.new(digest_password) == password 
-        session[:id] = id
-        session[:username] = username
-    
-        redirect('/')
+        if BCrypt::Password.new(digest_password) == password 
+            session[:id] = id
+            session[:username] = username
+        
+            redirect('/')
+        else
+            # tror jag borde göra detta anourlunda
+            "Incorrect password"
+        end
     else
-        # tror jag borde göra detta anourlunda
-        "Incorrect password"
+        "A user with the name '#{username}' does not exist"
     end
 end
 
@@ -58,7 +57,6 @@ post('/users/new') do
     else
         "Confirmed password didn't match try again"
     end
-
 end
 
 get('/characters') do 
