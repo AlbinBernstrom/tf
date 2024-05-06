@@ -8,6 +8,7 @@ enable :sessions
 
 get('/') do 
     @username = session[:username]
+    @id = session[:id]
     slim(:home)
 end
 
@@ -32,6 +33,7 @@ post('/login') do
         if BCrypt::Password.new(digest_password) == password 
             session[:id] = id
             session[:username] = username
+            session[:admin] = result["admin"]
         
             redirect('/')
         else
@@ -62,23 +64,32 @@ end
 get('/characters') do 
     db = SQLite3::Database.new("db/dungeans_database.db")
     db.results_as_hash = true
-    result = db.execute("SELECT * FROM characters")
-    p result
+    if session[:admin] == 1
+        result = db.execute("SELECT * FROM characters")
+    else
+        result = db.execute("SELECT * FROM characters WHERE user_id = ?", session[:id])
+    end
     slim(:"characters/index",locals:{characters:result})
-
 end
 
 get('/characters/new') do
-  slim(:"characters/new")
+    if session[:id] != nil
+        db = SQLite3::Database.new("db/dungeans_database.db")
+        db.results_as_hash = true
+        @result = db.execute("SELECT * FROM class")
+        p @result
+        slim(:'characters/new')
+    else
+        "you have to be logged in, in order to create a character"
+    end
 end
 
 post('/characters') do 
     name = params[:name]
-    user_id = params[:user_id].to_i
     character_class = params[:character_class]
     race = params[:race]
     db = SQLite3::Database.new("db/dungeans_database.db")
-    db.execute("INSERT INTO characters (name, user_id, class, race) VALUES (?,?,?,?)", name, user_id, character_class, race)
+    db.execute("INSERT INTO characters (name, class, race, user_id) VALUES (?,?,?,?)", name, character_class, race, session[:id])
     redirect('/characters')
 end
 
@@ -94,7 +105,8 @@ get('/characters/:id/edit') do
     db = SQLite3::Database.new("db/dungeans_database.db")
     db.results_as_hash = true
     result = db.execute("SELECT * FROM characters WHERE id = ?",id).first
-    slim(:'/characters/edit', locals:{result:result})
+    result2 = db.execute("SELECT * FROM class")
+    slim(:'/characters/edit', locals:{result:result, result2:result2})
 end
 
 post('/characters/:id/update') do

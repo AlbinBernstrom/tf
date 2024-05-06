@@ -1,8 +1,9 @@
+h2 Create your character
+
 form action="/characters" method="post"
     input type="text" name="name" placeholder="Character Name"
-    input type="text" name="character_class" placeholder="Class Name"
+    select name="character_class"
+        - @result.each do |el|
+            option value='#{el["name"]}' #{el["name"]}
     input type="text" name="race" placeholder="Race"
-    input type="text" name="user_id" placeholder="Users id (1) just nu"
     input type="submit" value="Create"
-
-    
